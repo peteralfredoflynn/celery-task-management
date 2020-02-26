@@ -1,0 +1,7 @@
+var/*
+.gitignore
+*/.pytest_cache
+Makefile
+var/
+*/__pycache__
+__pycache__

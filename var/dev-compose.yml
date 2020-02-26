@@ -1,0 +1,54 @@
+version: '2'
+services:
+
+  dev_redis:
+      container_name: dev_redis
+      image: redis:latest
+      ports:
+        - "6379:6379"
+      restart: on-failure
+
+  dev_rabbit:
+    container_name: dev_rabbit
+    image: rabbitmq:latest
+    ports:
+      - "5672:5672"
+    restart: on-failure
+
+  task_mgt_app:
+    container_name: task_mgt_app
+    image: task_mgt_app
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    volumes:
+      - ../:/code
+    ports:
+      - "5000:5000"
+    expose:
+      - 5000
+    links:
+      - dev_redis
+    depends_on:
+      - dev_redis
+    environment:
+      REDIS_HOST: 'dev_redis'
+      REDIS_PORT: 6379
+      RABBIT_HOST: 'dev_rabbit'
+    working_dir: /code
+    command: gunicorn "app.application:create_flask_app()" --workers 1 -b :5000
+
+  task_mgt_worker_default:
+    container_name: task_mgt_worker_default
+    image: task_mgt_app
+    links:
+      - dev_redis
+    depends_on:
+      - dev_redis
+      - dev_rabbit
+    environment:
+      REDIS_HOST: 'dev_redis'
+      REDIS_PORT: 6379
+      RABBIT_HOST: 'dev_rabbit'
+    working_dir: /code
+    command: celery -A app.celery worker -Q celery --loglevel=info -n default@%h

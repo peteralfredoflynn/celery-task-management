@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: task-mgt-dev
+  name: task-mgt-rabbit
+spec:
+  selector:
+    matchLabels:
+      app: task-mgt-rabbit
+      role: master
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: task-mgt-rabbit
+        role: master
+    spec:
+      containers:
+        - name: task-mgt-rabbit
+          image: rabbitmq:latest
+          resources:
+            requests:
+              cpu: 1028m
+              memory: 200Mi
+          ports:
+            - containerPort: 6379
+              protocol: TCP  # This is the default?
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: task-mgt-dev
+  name: task-mgt-rabbit
+  labels:
+    app: task-mgt-rabbit
+    role: master
+spec:
+  ports:
+    - port: 6379
+      targetPort: 6379
+  selector:
+    app: task-mgt-rabbit
+    role: master
