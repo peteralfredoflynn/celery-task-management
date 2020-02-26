@@ -2,20 +2,20 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: task-mgt-dev
-  name: task-mgt-app
+  name: task-mgt-worker-default
   labels:
-    app: task-mgt-app
+    app: task-mgt-worker-default
 spec:
   selector:
     matchLabels:
-      app: task-mgt-app
+      app: task-mgt-worker-default
   template:
     metadata:
       labels:
-        app: task-mgt-app
+        app: task-mgt-worker-default
     spec:
       containers:
-        - name: task-mgt-app
+        - name: task-mgt-worker-default
           image: gcr.io/peter-sandbox-237917/task_mgt:VERSION
           resources:
             requests:
@@ -40,17 +40,4 @@ spec:
               value: "1"
           ports:
             containerPort: 80
----
-apiVersion: v1
-kind: Service
-metadata:
-  namespace: task-mgt-dev
-  name: task-mgt-app
-  labels:
-    app: task-mgt-app
-spec:
-  type: LoadBalancer
-  ports:
-  - port: 80
-  selector:
-    app: task-mgt-app
+          command: celery -A app.celery worker -Q celery --loglevel=info -n default@%h
