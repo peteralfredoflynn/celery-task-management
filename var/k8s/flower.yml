@@ -2,20 +2,20 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   namespace: task-mgt-dev
-  name: task-mgt-worker-default
+  name: task-mgt-flower
   labels:
-    app: task-mgt-worker-default
+    app: task-mgt-flower
 spec:
   selector:
     matchLabels:
-      app: task-mgt-worker-default
+      app: task-mgt-flower
   template:
     metadata:
       labels:
-        app: task-mgt-worker-default
+        app: task-mgt-flower
     spec:
       containers:
-        - name: task-mgt-worker-default
+        - name: task-mgt-flower
           image: gcr.io/peter-sandbox-237917/task_mgt:v7
           resources:
             requests:
@@ -39,13 +39,25 @@ spec:
             - name: CELERY_BACKEND_REDIS_DB
               value: "1"
           command:
-            - celery
+            - flower
           args:
-            - -A
-            - app.celery
-            - worker
-            - -Q
-            - celery
+            - "--broker=amqp://$(RABBIT_USER):$(RABBIT_PASSWORD)@$(RABBIT_HOST):$(RABBIT_PORT)/$(RABBIT_VHOST)"
             - --loglevel=info
-            - -n
-            - default@%h
+            - --port=80
+          ports:
+            - name: web
+              containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: task-mgt-dev
+  name: flower-service
+  labels:
+    app: task-mgt-flower
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+  selector:
+    app: task-mgt-flower

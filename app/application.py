@@ -29,7 +29,7 @@ def make_celery(app=None):
             task_routes={
                 "tasks.say_hello": {"queue": "celery"},
             },
-            task_annotations={"*": {"rate_limit": "1/s"}},
+            task_annotations={"*": {"rate_limit": "3/s"}},
             imports=(
                 "app.tasks",
             ),
@@ -79,7 +79,7 @@ def _set_routes(app):
         from flask import current_app
         import redis
         redis_cache = redis.Redis(
-            host=current_app.config["CACHE_REDIS_HOST"], port=current_app.config["CACHE_REDIS_PORT"]
+            host=current_app.config["REDIS_HOST"], port=current_app.config["REDIS_PORT"]
         )
         value = redis_cache.incr("hits")
         current_app.logger.info("HELLO")

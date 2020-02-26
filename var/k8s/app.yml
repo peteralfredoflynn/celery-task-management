@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: task-mgt-app
-          image: gcr.io/peter-sandbox-237917/task_mgt:VERSION
+          image: gcr.io/peter-sandbox-237917/task_mgt:v7
           resources:
             requests:
               cpu: 100m
@@ -39,7 +39,8 @@ spec:
             - name: CELERY_BACKEND_REDIS_DB
               value: "1"
           ports:
-            containerPort: 80
+            - name: web
+              containerPort: 80
 ---
 apiVersion: v1
 kind: Service
