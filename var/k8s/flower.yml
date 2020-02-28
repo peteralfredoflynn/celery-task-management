@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: task-mgt-flower
-          image: gcr.io/peter-sandbox-237917/task_mgt:v7
+          image: gcr.io/peter-sandbox-237917/task_mgt:v8
           resources:
             requests:
               cpu: 100m

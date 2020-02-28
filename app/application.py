@@ -3,6 +3,8 @@ import os
 from celery import Celery
 from flask import Flask
 
+from .commands import configure_test_commands
+
 celery = Celery()
 
 
@@ -10,6 +12,7 @@ def create_flask_app():
     app = Flask(__name__)
     _set_configuration(app)
     _set_routes(app)
+    configure_test_commands(app)
     make_celery(app)
     return app
 
@@ -29,7 +32,7 @@ def make_celery(app=None):
             task_routes={
                 "tasks.say_hello": {"queue": "celery"},
             },
-            task_annotations={"*": {"rate_limit": "3/s"}},
+            # task_annotations={"*": {"rate_limit": "3/s"}},
             imports=(
                 "app.tasks",
             ),

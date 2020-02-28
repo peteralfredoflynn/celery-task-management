@@ -18,10 +18,37 @@ spec:
       containers:
         - name: task-mgt-redis-master
           image: redis:latest
+          readinessProbe:
+          # NOTE: readinessProbe does not restart the container. It will mark
+          # the container as "Not Ready". This means the container will also
+          # stop receiving requests.
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 5 # not default, how long before running the first probe
+            periodSeconds: 10  # default, how often the probe runs
+            timeoutSeconds: 1  # default, probe should finish within 1 second
+            successThreshold: 1  # default, how many probes before considered success
+            failureThreshold: 3  # default, how many probes before considered fail
+          livenessProbe:
+          # NOTE: livenessProbe will restart the container if it fails 3 times in a row (default)
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 5  # not default, how long before running the first probe
+            periodSeconds: 10  # default, how often the probe runs
+            timeoutSeconds: 1  # default, probe should finish within 1 second
+            successThreshold: 1  # default, how many probes before considered success
+            failureThreshold: 3  # default, how many probes before considered fail
           resources:
             requests:
-              cpu: 100m
-              memory: 200Mi
+              cpu: 10m
+              memory: 10Mi
+            limits:
+              cpu: 500m
+              memory: 100Mi
           ports:
             - containerPort: 6379
               protocol: TCP  # This is the default?

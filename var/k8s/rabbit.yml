@@ -1,13 +1,14 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   namespace: task-mgt-dev
   name: task-mgt-rabbit
 spec:
+  serviceName: task-mgt-rabbitmq-sts
   selector:
     matchLabels:
       app: task-mgt-rabbit
-  replicas: 1
+  replicas: 1  # this is a standalone deployment of rabbitmq
   template:
     metadata:
       labels:
@@ -16,13 +17,52 @@ spec:
       containers:
         - name: task-mgt-rabbit
           image: rabbitmq:latest
+#          readinessProbe:
+#          # NOTE: readinessProbe does not restart the container. It will mark
+#          # the container as "Not Ready". This means the container will also
+#          # stop receiving requests.
+#            exec:
+#              command:
+#                - rabbitmqctl
+#                - ping
+#            initialDelaySeconds: 5 # not default, how long before running the first probe
+#            periodSeconds: 10  # default, how often the probe runs
+#            timeoutSeconds: 1  # default, probe should finish within 1 second
+#            successThreshold: 1  # default, how many probes before considered success
+#            failureThreshold: 3  # default, how many probes before considered fail
+#          livenessProbe:
+#          # NOTE: livenessProbe will restart the container if it fails 3 times in a row (default)
+#            exec:
+#              command:
+#                - redis-cli
+#                - ping
+#            initialDelaySeconds: 5  # not default, how long before running the first probe
+#            periodSeconds: 10  # default, how often the probe runs
+#            timeoutSeconds: 1  # default, probe should finish within 1 second
+#            successThreshold: 1  # default, how many probes before considered success
+#            failureThreshold: 3  # default, how many probes before considered fail
           resources:
             requests:
               cpu: 100m
-              memory: 200Mi
+              memory: 200Mi  # should be > 128MB minimum
           ports:
             - containerPort: 5672
               protocol: TCP  # This is the default?
+          volumeMounts:
+            # directory name where rabbitmq stores data
+            # see https://www.rabbitmq.com/relocate.html
+            - name: mnesia-dir
+              mountPath: /var/lib/rabbitmq/mnesia
+  volumeClaimTemplates:
+    - metadata:
+        name: mnesia-dir
+      spec:
+        resources:
+          requests:
+            storage: 1Gi
+        accessModes:
+          - ReadWriteOnce
+          - ReadOnlyMany
 ---
 apiVersion: v1
 kind: Service
@@ -33,7 +73,9 @@ metadata:
     app: task-mgt-rabbit
 spec:
   ports:
-    - port: 5672
+    - name: amqp
+      protocol: TCP
+      port: 5672
       targetPort: 5672
   selector:
     app: task-mgt-rabbit
